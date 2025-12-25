@@ -119,6 +119,13 @@ class CheckoutView(LoginRequiredMixin, View):
             # Clear cart
             cart.clear()
 
+        # Send Telegram notification
+        try:
+            from apps.telegram_bot.services import send_order_notification
+            send_order_notification(order)
+        except Exception:
+            pass  # Don't fail order creation if Telegram fails
+
         messages.success(request, f'Заказ #{order.pk} успешно создан!')
         return redirect('orders:detail', pk=order.pk)
 
