@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Suwi - Доставка суши">
+    <meta name="theme-color" content="#ff6b35">
+
+    <title>{% block title %}{{ title|default:"Suwi" }}{% endblock %} | Suwi</title>
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="{% load static %}{% static 'manifest.json' %}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32x32.png' %}">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="{% url 'home' %}" class="logo">
+                    <span class="logo-text">Suwi</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="{% url 'menu:catalog' %}" class="nav-link">Меню</a>
+                    <a href="{% url 'cart:detail' %}" class="nav-link cart-link">
+                        Корзина
+                        {% if cart|length > 0 %}
+                        <span class="cart-count">{{ cart|length }}</span>
+                        {% endif %}
+                    </a>
+
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.first_name|default:user.phone }}</a>
+                    <a href="{% url 'accounts:logout' %}" class="nav-link">Выход</a>
+                    {% else %}
+                    <a href="{% url 'accounts:login' %}" class="nav-link">Вход</a>
+                    <a href="{% url 'accounts:register' %}" class="nav-link btn-primary">Регистрация</a>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile menu button -->
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Меню">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages">
+        <div class="container">
+            {% for message in messages %}
+            <div class="message message-{{ message.tags }}">
+                {{ message }}
+                <button class="message-close" onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main content -->
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>Suwi</h3>
+                    <p>Доставка суши</p>
+                </div>
+                <div class="footer-contacts">
+                    <p>Телефон: {{ RESTAURANT_PHONE }}</p>
+                    <p>Адрес: {{ RESTAURANT_ADDRESS }}</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Suwi. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

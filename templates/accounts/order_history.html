@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}История заказов{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="orders-page">
+        <h1 class="page-title">История заказов</h1>
+
+        {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-number">Заказ #{{ order.pk }}</span>
+                    <span class="order-status status-{{ order.status }}">{{ order.get_status_display }}</span>
+                </div>
+
+                <div class="order-items">
+                    {% for item in order.items.all %}
+                    <span class="order-item">{{ item.product_name }} x{{ item.quantity }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="order-info">
+                    <span class="order-date">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+                    <span class="order-total">{{ order.total|floatformat:0 }} сум</span>
+                </div>
+
+                <div class="order-actions">
+                    <a href="{{ order.get_absolute_url }}" class="btn btn-outline">Подробнее</a>
+                    {% if order.status == 'delivered' %}
+                    <button class="btn btn-primary" data-repeat-order="{{ order.pk }}">
+                        Повторить заказ
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>У вас пока нет заказов</p>
+            <a href="{% url 'menu:catalog' %}" class="btn btn-primary">Перейти в меню</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
