@@ -8,12 +8,10 @@ const CACHE_NAME = `suwi-${CACHE_VERSION}`;
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
-    '/',
     '/menu/',
     '/static/css/main.css',
     '/static/js/main.js',
     '/static/manifest.json',
-    '/offline/',
 ];
 
 // Install event - cache static assets
@@ -105,9 +103,12 @@ self.addEventListener('fetch', (event) => {
                     if (cached) {
                         return cached;
                     }
-                    // Return offline page for HTML requests
-                    if (event.request.headers.get('accept').includes('text/html')) {
-                        return caches.match('/offline/');
+                    // Return simple offline message
+                    if (event.request.headers.get('accept')?.includes('text/html')) {
+                        return new Response('<html><body><h1>Вы офлайн</h1><p>Проверьте подключение к интернету</p></body></html>', {
+                            status: 503,
+                            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                        });
                     }
                     return new Response('Offline', { status: 503 });
                 });
