@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="product-detail-page">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="{% url 'menu:catalog' %}">Меню</a>
+            <span>/</span>
+            <a href="{% url 'menu:category' slug=product.category.slug %}">{{ product.category.name }}</a>
+            <span>/</span>
+            <span>{{ product.name }}</span>
+        </nav>
+
+        <!-- Product Detail -->
+        <div class="product-detail">
+            <div class="product-detail-image">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% else %}
+                <div class="product-image-placeholder large">
+                    <span>Suwi</span>
+                </div>
+                {% endif %}
+
+                {% if product.is_new %}
+                <span class="product-badge badge-new">Новинка</span>
+                {% endif %}
+            </div>
+
+            <div class="product-detail-info">
+                <h1 class="product-detail-name">{{ product.name }}</h1>
+
+                <div class="product-detail-meta">
+                    {% if product.weight %}
+                    <span class="meta-item">{{ product.weight }}</span>
+                    {% endif %}
+                    {% if product.pieces %}
+                    <span class="meta-item">{{ product.pieces }} шт</span>
+                    {% endif %}
+                </div>
+
+                {% if product.description %}
+                <div class="product-detail-description">
+                    <h3>Описание</h3>
+                    <p>{{ product.description }}</p>
+                </div>
+                {% endif %}
+
+                <div class="product-detail-price">
+                    {{ product.price|floatformat:0 }} сум
+                </div>
+
+                <div class="product-detail-actions">
+                    <div class="quantity-selector">
+                        <button class="qty-btn qty-minus" data-action="decrease">-</button>
+                        <input type="number" class="qty-input" value="1" min="1" max="99">
+                        <button class="qty-btn qty-plus" data-action="increase">+</button>
+                    </div>
+
+                    <button class="btn btn-primary btn-lg btn-add-to-cart"
+                            data-product-id="{{ product.pk }}"
+                            data-product-name="{{ product.name }}"
+                            data-product-price="{{ product.price }}">
+                        Добавить в корзину
+                    </button>
+
+                    {% if user.is_authenticated %}
+                    <button class="btn-favorite-lg {% if is_favorite %}active{% endif %}"
+                            data-product-id="{{ product.pk }}">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="{% if is_favorite %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <span>{% if is_favorite %}В избранном{% else %}В избранное{% endif %}</span>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Products -->
+        {% if related_products %}
+        <section class="related-products">
+            <h2 class="section-title">Похожие товары</h2>
+            <div class="products-grid">
+                {% for product in related_products %}
+                {% include 'menu/includes/product_card.html' %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quantity selector
+    const qtyInput = document.querySelector('.qty-input');
+    const qtyMinus = document.querySelector('.qty-minus');
+    const qtyPlus = document.querySelector('.qty-plus');
+
+    if (qtyMinus) {
+        qtyMinus.addEventListener('click', function() {
+            let value = parseInt(qtyInput.value) || 1;
+            if (value > 1) {
+                qtyInput.value = value - 1;
+            }
+        });
+    }
+
+    if (qtyPlus) {
+        qtyPlus.addEventListener('click', function() {
+            let value = parseInt(qtyInput.value) || 1;
+            if (value < 99) {
+                qtyInput.value = value + 1;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="category-page">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="{% url 'menu:catalog' %}">Меню</a>
+            <span>/</span>
+            <span>{{ category.name }}</span>
+        </nav>
+
+        <!-- Category Header -->
+        <div class="category-header">
+            <h1 class="page-title">{{ category.name }}</h1>
+            {% if category.description %}
+            <p class="category-description">{{ category.description }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+            {% for cat in categories %}
+            <a href="{% url 'menu:category' slug=cat.slug %}"
+               class="category-tab {% if cat.pk == category.pk %}active{% endif %}">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Products -->
+        {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+            {% include 'menu/includes/product_card.html' %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>В этой категории пока нет товаров</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Поиск: {{ query }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="search-page">
+        <!-- Search Form -->
+        <div class="search-bar large">
+            <form action="{% url 'menu:search' %}" method="get" class="search-form">
+                <input type="text" name="q" value="{{ query }}" placeholder="Поиск блюд..." class="search-input" autofocus>
+                <button type="submit" class="search-btn">Найти</button>
+            </form>
+        </div>
+
+        <!-- Results -->
+        {% if query %}
+        <h1 class="page-title">
+            Результаты поиска: "{{ query }}"
+            <span class="results-count">({{ products|length }})</span>
+        </h1>
+
+        {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+            {% include 'menu/includes/product_card.html' %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>По запросу "{{ query }}" ничего не найдено</p>
+            <a href="{% url 'menu:catalog' %}" class="btn btn-primary">Перейти в меню</a>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <p>Введите название блюда для поиска</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

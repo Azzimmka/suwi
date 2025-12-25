@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Меню{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="catalog-page">
+        <!-- Search -->
+        <div class="search-bar">
+            <form action="{% url 'menu:search' %}" method="get" class="search-form">
+                <input type="text" name="q" placeholder="Поиск блюд..." class="search-input">
+                <button type="submit" class="search-btn">Найти</button>
+            </form>
+        </div>
+
+        <!-- Popular Products -->
+        {% if popular_products %}
+        <section class="catalog-section">
+            <h2 class="section-title">Популярное</h2>
+            <div class="products-grid">
+                {% for product in popular_products %}
+                {% include 'menu/includes/product_card.html' %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Categories with Products -->
+        {% for category in categories %}
+        {% if category.products.all %}
+        <section class="catalog-section" id="{{ category.slug }}">
+            <div class="section-header">
+                <h2 class="section-title">{{ category.name }}</h2>
+                <a href="{% url 'menu:category' slug=category.slug %}" class="section-link">Все</a>
+            </div>
+            <div class="products-grid">
+                {% for product in category.products.all|slice:":4" %}
+                {% if product.is_available %}
+                {% include 'menu/includes/product_card.html' %}
+                {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% load static %}
+<div class="product-card" data-product-id="{{ product.pk }}">
+    {% if product.is_new %}
+    <span class="product-badge badge-new">Новинка</span>
+    {% endif %}
+
+    <a href="{{ product.get_absolute_url }}" class="product-image-link">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+        {% else %}
+        <div class="product-image product-image-placeholder">
+            <span>Suwi</span>
+        </div>
+        {% endif %}
+    </a>
+
+    <div class="product-content">
+        <h3 class="product-name">
+            <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+        </h3>
+
+        {% if product.description %}
+        <p class="product-description">{{ product.description|truncatechars:60 }}</p>
+        {% endif %}
+
+        <div class="product-meta">
+            {% if product.weight %}
+            <span class="product-weight">{{ product.weight }}</span>
+            {% endif %}
+            {% if product.pieces %}
+            <span class="product-pieces">{{ product.pieces }} шт</span>
+            {% endif %}
+        </div>
+
+        <div class="product-footer">
+            <span class="product-price">{{ product.price|floatformat:0 }} сум</span>
+
+            <div class="product-actions">
+                {% if user.is_authenticated %}
+                <button class="btn-favorite {% if product.pk in favorite_ids %}active{% endif %}"
+                        data-product-id="{{ product.pk }}"
+                        title="{% if product.pk in favorite_ids %}Удалить из избранного{% else %}Добавить в избранное{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="{% if product.pk in favorite_ids %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </button>
+                {% endif %}
+
+                <button class="btn btn-primary btn-add-to-cart"
+                        data-product-id="{{ product.pk }}"
+                        data-product-name="{{ product.name }}"
+                        data-product-price="{{ product.price }}">
+                    В корзину
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
