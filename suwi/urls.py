@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 
 urlpatterns = [
     # Admin
@@ -14,6 +14,9 @@ urlpatterns = [
 
     # Home redirect to menu
     path('', RedirectView.as_view(pattern_name='menu:catalog', permanent=False), name='home'),
+
+    # Offline page for PWA
+    path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
 
     # Apps
     path('accounts/', include('apps.accounts.urls')),

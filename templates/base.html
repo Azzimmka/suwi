@@ -2,17 +2,28 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Suwi - Доставка суши">
     <meta name="theme-color" content="#ff6b35">
 
+    <!-- PWA meta tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Suwi">
+    <meta name="application-name" content="Suwi">
+    <meta name="msapplication-TileColor" content="#ff6b35">
+
     <title>{% block title %}{{ title|default:"Suwi" }}{% endblock %} | Suwi</title>
 
+    {% load static %}
     <!-- PWA manifest -->
-    <link rel="manifest" href="{% load static %}{% static 'manifest.json' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
 
-    <!-- Favicon -->
+    <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'icons/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'icons/icon-192x192.png' %}">
 
     <!-- Styles -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
@@ -93,6 +104,59 @@
 
     <!-- Scripts -->
     <script src="{% static 'js/main.js' %}"></script>
+
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(function(registration) {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="pwa-banner" style="display: none;">
+        <span>Установите Suwi для быстрого доступа</span>
+        <button id="pwa-install-btn" class="btn btn-primary btn-sm">Установить</button>
+        <button id="pwa-dismiss-btn" class="pwa-dismiss">&times;</button>
+    </div>
+
+    <script>
+        // PWA Install prompt
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show install banner if not dismissed before
+            if (!localStorage.getItem('pwa-dismissed')) {
+                document.getElementById('pwa-install-banner').style.display = 'flex';
+            }
+        });
+
+        document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('Install prompt outcome:', outcome);
+                deferredPrompt = null;
+                document.getElementById('pwa-install-banner').style.display = 'none';
+            }
+        });
+
+        document.getElementById('pwa-dismiss-btn')?.addEventListener('click', () => {
+            document.getElementById('pwa-install-banner').style.display = 'none';
+            localStorage.setItem('pwa-dismissed', 'true');
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>
