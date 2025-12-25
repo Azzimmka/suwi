@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Suwi - Доставка суши">
-    <meta name="theme-color" content="#ff6b35">
+    <meta name="description" content="Суши love - Доставка вкусных суши с любовью">
+    <meta name="theme-color" content="#e63946">
 
     <!-- PWA meta tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Suwi">
-    <meta name="application-name" content="Suwi">
-    <meta name="msapplication-TileColor" content="#ff6b35">
+    <meta name="apple-mobile-web-app-title" content="Суши love">
+    <meta name="application-name" content="Суши love">
+    <meta name="msapplication-TileColor" content="#e63946">
 
-    <title>{% block title %}{{ title|default:"Suwi" }}{% endblock %} | Suwi</title>
+    <title>{% block title %}{{ title|default:"Суши love" }}{% endblock %} | Суши love</title>
 
     {% load static %}
     <!-- PWA manifest -->
@@ -35,7 +35,8 @@
         <div class="container">
             <nav class="nav">
                 <a href="{% url 'home' %}" class="logo">
-                    <span class="logo-text">Suwi</span>
+                    <span class="logo-icon">🍣</span>
+                    <span class="logo-text">Суши <span class="logo-love">love</span></span>
                 </a>
 
                 <div class="nav-links">
@@ -46,6 +47,7 @@
                     </a>
 
                     {% if user.is_authenticated %}
+                    <a href="{% url 'orders:history' %}" class="nav-link">Мои заказы</a>
                     <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.first_name|default:user.phone }}</a>
                     <a href="{% url 'accounts:logout' %}" class="nav-link">Выход</a>
                     {% else %}
@@ -88,8 +90,8 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-info">
-                    <h3>Suwi</h3>
-                    <p>Доставка суши</p>
+                    <h3>🍣 Суши love</h3>
+                    <p>Доставка вкусных суши с любовью</p>
                 </div>
                 <div class="footer-contacts">
                     <p>Телефон: {{ RESTAURANT_PHONE }}</p>
@@ -97,7 +99,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Suwi. Все права защищены.</p>
+                <p>&copy; 2025 Суши love. Сделано с любовью ❤️</p>
             </div>
         </div>
     </footer>
@@ -122,7 +124,7 @@
 
     <!-- PWA Install Banner -->
     <div id="pwa-install-banner" class="pwa-banner" style="display: none;">
-        <span>Установите Suwi для быстрого доступа</span>
+        <span>Установите Суши love для быстрого доступа</span>
         <button id="pwa-install-btn" class="btn btn-primary btn-sm">Установить</button>
         <button id="pwa-dismiss-btn" class="pwa-dismiss">&times;</button>
     </div>

@@ -1,12 +1,12 @@
 {
-  "name": "Suwi - Доставка суши",
-  "short_name": "Suwi",
-  "description": "Заказ суши с доставкой",
+  "name": "Суши love - Доставка суши с любовью",
+  "short_name": "Суши love",
+  "description": "Заказ вкусных суши с доставкой",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#ff6b35",
+  "theme_color": "#e63946",
   "icons": [
     {
       "src": "/static/icons/icon-72x72.png",

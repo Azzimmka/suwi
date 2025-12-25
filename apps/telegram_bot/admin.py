@@ -3,7 +3,7 @@ Admin configuration for telegram_bot app.
 """
 
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from .models import TelegramSettings
 from .services import TelegramBot
@@ -56,7 +56,7 @@ class TelegramSettingsAdmin(admin.ModelAdmin):
     def test_connection(self, obj):
         """Test Telegram bot connection."""
         if not obj or not obj.bot_token:
-            return format_html(
+            return mark_safe(
                 '<span style="color: #999;">Токен не настроен</span>'
             )
 
@@ -65,12 +65,11 @@ class TelegramSettingsAdmin(admin.ModelAdmin):
 
         if result:
             bot_name = result.get('username', 'Unknown')
-            return format_html(
-                '<span style="color: green;">✅ Подключён: @{}</span>',
-                bot_name
+            return mark_safe(
+                f'<span style="color: green;">✅ Подключён: @{bot_name}</span>'
             )
         else:
-            return format_html(
+            return mark_safe(
                 '<span style="color: red;">❌ Ошибка подключения</span>'
             )
 

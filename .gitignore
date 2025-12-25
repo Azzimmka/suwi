@@ -122,8 +122,10 @@ dmypy.json
 # Static files collected
 staticfiles/
 
-# Media files (user uploads)
-media/
+# Media files (user uploads) - but keep product images
+media/*
+!media/products/
+!media/.gitkeep
 
 # IDE
 .idea/
