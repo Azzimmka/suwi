@@ -1,0 +1,432 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Заказ #{{ order.pk }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .order-page {
+        padding: 24px 0;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .order-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .order-number {
+        font-size: 1.5rem;
+        color: var(--text-light);
+        margin-bottom: 8px;
+    }
+
+    .order-status-badge {
+        display: inline-block;
+        padding: 8px 24px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .status-new { background: #e3f2fd; color: #1565c0; }
+    .status-confirmed { background: #e8f5e9; color: #2e7d32; }
+    .status-cooking { background: #fff3e0; color: #ef6c00; }
+    .status-delivering { background: #f3e5f5; color: #7b1fa2; }
+    .status-delivered { background: #e8f5e9; color: #2e7d32; }
+    .status-cancelled { background: #ffebee; color: #c62828; }
+
+    /* Status Timeline */
+    .status-timeline {
+        display: flex;
+        justify-content: space-between;
+        margin: 32px 0;
+        position: relative;
+    }
+
+    .status-timeline::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--border-color);
+        z-index: 1;
+    }
+
+    .timeline-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        flex: 1;
+    }
+
+    .timeline-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        margin-bottom: 8px;
+    }
+
+    .timeline-step.active .timeline-icon,
+    .timeline-step.completed .timeline-icon {
+        background: var(--primary-color);
+    }
+
+    .timeline-step.completed .timeline-icon {
+        background: var(--success-color);
+    }
+
+    .timeline-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        text-align: center;
+    }
+
+    .timeline-step.active .timeline-label,
+    .timeline-step.completed .timeline-label {
+        color: var(--text-color);
+        font-weight: 500;
+    }
+
+    /* Order Card */
+    .order-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        background: var(--bg-light);
+        padding: 16px 24px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-body {
+        padding: 24px;
+    }
+
+    /* Order Items */
+    .order-items {
+        margin-bottom: 16px;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .order-item:last-child {
+        border-bottom: none;
+    }
+
+    .item-name {
+        font-weight: 500;
+    }
+
+    .item-qty {
+        color: var(--text-light);
+        margin-left: 8px;
+    }
+
+    /* Order Totals */
+    .order-totals {
+        border-top: 2px solid var(--border-color);
+        padding-top: 16px;
+        margin-top: 16px;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+    }
+
+    .total-row.final {
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-top: 2px solid var(--text-color);
+        padding-top: 16px;
+        margin-top: 8px;
+    }
+
+    /* Delivery Info */
+    .delivery-info {
+        display: grid;
+        gap: 16px;
+    }
+
+    .info-row {
+        display: flex;
+        gap: 12px;
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--bg-light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .info-content {
+        flex: 1;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-weight: 500;
+    }
+
+    /* Map */
+    #order-map {
+        height: 200px;
+        border-radius: var(--border-radius);
+        margin-top: 16px;
+    }
+
+    /* Actions */
+    .order-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .order-actions .btn {
+        flex: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .status-timeline {
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .timeline-step {
+            flex: 0 0 auto;
+            width: 80px;
+        }
+
+        .status-timeline::before {
+            display: none;
+        }
+
+        .order-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="order-page">
+        <!-- Header -->
+        <div class="order-header">
+            <p class="order-number">Заказ #{{ order.pk }}</p>
+            <span class="order-status-badge status-{{ order.status }}" id="status-badge">
+                {{ order.get_status_display }}
+            </span>
+        </div>
+
+        <!-- Status Timeline -->
+        {% if order.status != 'cancelled' %}
+        <div class="status-timeline" id="status-timeline">
+            <div class="timeline-step {% if order.status == 'new' %}active{% elif order.status in 'confirmed,cooking,delivering,delivered' %}completed{% endif %}">
+                <div class="timeline-icon">1</div>
+                <span class="timeline-label">Новый</span>
+            </div>
+            <div class="timeline-step {% if order.status == 'confirmed' %}active{% elif order.status in 'cooking,delivering,delivered' %}completed{% endif %}">
+                <div class="timeline-icon">2</div>
+                <span class="timeline-label">Подтверждён</span>
+            </div>
+            <div class="timeline-step {% if order.status == 'cooking' %}active{% elif order.status in 'delivering,delivered' %}completed{% endif %}">
+                <div class="timeline-icon">3</div>
+                <span class="timeline-label">Готовится</span>
+            </div>
+            <div class="timeline-step {% if order.status == 'delivering' %}active{% elif order.status == 'delivered' %}completed{% endif %}">
+                <div class="timeline-icon">4</div>
+                <span class="timeline-label">В доставке</span>
+            </div>
+            <div class="timeline-step {% if order.status == 'delivered' %}active completed{% endif %}">
+                <div class="timeline-icon">5</div>
+                <span class="timeline-label">Доставлен</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Order Items -->
+        <div class="order-card">
+            <div class="card-header">Состав заказа</div>
+            <div class="card-body">
+                <div class="order-items">
+                    {% for item in order.items.all %}
+                    <div class="order-item">
+                        <span>
+                            <span class="item-name">{{ item.product_name }}</span>
+                            <span class="item-qty">x{{ item.quantity }}</span>
+                        </span>
+                        <span>{{ item.get_total|floatformat:0 }} сум</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="order-totals">
+                    <div class="total-row">
+                        <span>Сумма товаров:</span>
+                        <span>{{ order.subtotal|floatformat:0 }} сум</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Доставка:</span>
+                        <span>{% if order.delivery_fee %}{{ order.delivery_fee|floatformat:0 }} сум{% else %}Бесплатно{% endif %}</span>
+                    </div>
+                    {% if order.bonus_used %}
+                    <div class="total-row">
+                        <span>Бонусы:</span>
+                        <span>-{{ order.bonus_used|floatformat:0 }} сум</span>
+                    </div>
+                    {% endif %}
+                    <div class="total-row final">
+                        <span>Итого:</span>
+                        <span>{{ order.total|floatformat:0 }} сум</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Info -->
+        <div class="order-card">
+            <div class="card-header">Доставка</div>
+            <div class="card-body">
+                <div class="delivery-info">
+                    <div class="info-row">
+                        <div class="info-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="info-content">
+                            <p class="info-label">Адрес</p>
+                            <p class="info-value">{{ order.address }}</p>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                        </div>
+                        <div class="info-content">
+                            <p class="info-label">Телефон</p>
+                            <p class="info-value">{{ order.phone }}</p>
+                        </div>
+                    </div>
+
+                    {% if order.comment %}
+                    <div class="info-row">
+                        <div class="info-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="info-content">
+                            <p class="info-label">Комментарий</p>
+                            <p class="info-value">{{ order.comment }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="info-row">
+                        <div class="info-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="info-content">
+                            <p class="info-label">Дата заказа</p>
+                            <p class="info-value">{{ order.created_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="order-map"></div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="order-actions">
+            <a href="{% url 'menu:catalog' %}" class="btn btn-outline">В меню</a>
+            <form action="{% url 'orders:repeat' pk=order.pk %}" method="post" style="flex: 1;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Повторить заказ</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map
+    const lat = {{ order.latitude }};
+    const lng = {{ order.longitude }};
+
+    const map = L.map('order-map').setView([lat, lng], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    L.marker([lat, lng]).addTo(map);
+
+    // Status polling (every 10 seconds)
+    const orderId = {{ order.pk }};
+    const currentStatus = '{{ order.status }}';
+    const finalStatuses = ['delivered', 'cancelled'];
+
+    if (!finalStatuses.includes(currentStatus)) {
+        setInterval(function() {
+            fetch(`/orders/${orderId}/status/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== currentStatus) {
+                        // Status changed - reload page
+                        location.reload();
+                    }
+                })
+                .catch(err => console.error('Status check error:', err));
+        }, 10000);
+    }
+});
+</script>
+{% endblock %}

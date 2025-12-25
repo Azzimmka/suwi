@@ -1,0 +1,595 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .checkout-page {
+        padding: 24px 0;
+    }
+
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 24px;
+    }
+
+    .checkout-form {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .form-section {
+        margin-bottom: 24px;
+    }
+
+    .form-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text-color);
+    }
+
+    /* Map */
+    .map-container {
+        position: relative;
+        margin-bottom: 16px;
+    }
+
+    #map {
+        height: 300px;
+        border-radius: var(--border-radius);
+        z-index: 1;
+    }
+
+    .map-hint {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-top: 8px;
+    }
+
+    .locate-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        border: 2px solid rgba(0,0,0,0.2);
+        border-radius: 4px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .locate-btn:hover {
+        background: #f4f4f4;
+    }
+
+    .locate-btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    /* Saved addresses */
+    .saved-addresses {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .saved-address-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .saved-address-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .saved-address-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    /* Form fields */
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .address-name-group {
+        margin-top: 12px;
+        display: none;
+    }
+
+    .address-name-group.show {
+        display: block;
+    }
+
+    /* Order summary */
+    .order-summary {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 24px;
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 24px;
+    }
+
+    .summary-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .summary-items {
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 0.95rem;
+    }
+
+    .summary-item-name {
+        color: var(--text-light);
+    }
+
+    .summary-item-qty {
+        color: var(--text-light);
+        margin-left: 4px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+    }
+
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        padding: 16px 0 0;
+        border-top: 2px solid var(--text-color);
+        margin-top: 8px;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .submit-order {
+        width: 100%;
+        margin-top: 16px;
+        padding: 16px;
+        font-size: 1.1rem;
+    }
+
+    .submit-order:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .geolocation-error {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+        padding: 12px;
+        border-radius: var(--border-radius);
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .checkout-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .order-summary {
+            position: static;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        #map {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="checkout-page">
+        <h1 class="page-title">Оформление заказа</h1>
+
+        <form method="post" id="checkout-form" class="checkout-grid">
+            {% csrf_token %}
+
+            <div class="checkout-form">
+                <!-- Delivery Address Section -->
+                <div class="form-section">
+                    <h2 class="section-title">Адрес доставки</h2>
+
+                    <div id="geolocation-error" class="geolocation-error" style="display: none;"></div>
+
+                    {% if saved_addresses %}
+                    <div class="saved-addresses">
+                        {% for addr in saved_addresses %}
+                        <button type="button"
+                                class="saved-address-btn"
+                                data-lat="{{ addr.latitude }}"
+                                data-lng="{{ addr.longitude }}"
+                                data-address="{{ addr.address }}">
+                            {{ addr.name }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="map-container">
+                        <div id="map"></div>
+                        <button type="button" class="locate-btn" id="locate-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 2v4m0 12v4M2 12h4m12 0h4"></path>
+                            </svg>
+                            Мое местоположение
+                        </button>
+                    </div>
+                    <p class="map-hint">Нажмите на карту или используйте кнопку геолокации для определения адреса</p>
+
+                    <input type="hidden" name="latitude" id="latitude">
+                    <input type="hidden" name="longitude" id="longitude">
+
+                    <div class="form-group">
+                        <label for="address">Адрес *</label>
+                        <textarea name="address" id="address" required
+                                  placeholder="Улица, дом, квартира, подъезд, этаж"></textarea>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" name="save_address" id="save_address">
+                        <label for="save_address">Сохранить этот адрес</label>
+                    </div>
+
+                    <div class="address-name-group" id="address-name-group">
+                        <div class="form-group">
+                            <label for="address_name">Название адреса</label>
+                            <input type="text" name="address_name" id="address_name"
+                                   placeholder="Например: Дом, Работа">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="form-section">
+                    <h2 class="section-title">Контакты</h2>
+
+                    <div class="form-group">
+                        <label for="phone">Телефон *</label>
+                        <input type="tel" name="phone" id="phone" required
+                               value="{{ user_phone }}"
+                               placeholder="+998 XX XXX XX XX">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comment">Комментарий к заказу</label>
+                        <textarea name="comment" id="comment"
+                                  placeholder="Пожелания по доставке, аллергии и т.д."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <h2 class="summary-title">Ваш заказ</h2>
+
+                <div class="summary-items">
+                    {% for item in cart %}
+                    <div class="summary-item">
+                        <span>
+                            <span class="summary-item-name">{{ item.product.name }}</span>
+                            <span class="summary-item-qty">x{{ item.quantity }}</span>
+                        </span>
+                        <span>{{ item.total_price|floatformat:0 }} сум</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="summary-row">
+                    <span>Товаров:</span>
+                    <span>{{ cart|length }}</span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Сумма:</span>
+                    <span>{{ cart.get_total_price|floatformat:0 }} сум</span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Доставка:</span>
+                    <span>Бесплатно</span>
+                </div>
+
+                <div class="summary-total">
+                    <span>Итого:</span>
+                    <span>{{ cart.get_total_price|floatformat:0 }} сум</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary submit-order" id="submit-btn" disabled>
+                    Подтвердить заказ
+                </button>
+                <p style="text-align: center; margin-top: 12px; color: var(--text-light); font-size: 0.9rem;">
+                    Оплата наличными курьеру
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tashkent coordinates as default center
+    const defaultLat = 41.2995;
+    const defaultLng = 69.2401;
+
+    // Initialize map
+    const map = L.map('map').setView([defaultLat, defaultLng], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Marker
+    let marker = null;
+
+    // Form elements
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    const addressInput = document.getElementById('address');
+    const submitBtn = document.getElementById('submit-btn');
+    const locateBtn = document.getElementById('locate-btn');
+    const saveAddressCheckbox = document.getElementById('save_address');
+    const addressNameGroup = document.getElementById('address-name-group');
+    const geoError = document.getElementById('geolocation-error');
+
+    // Update marker position
+    function setMarker(lat, lng) {
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+
+            // Update on marker drag
+            marker.on('dragend', function(e) {
+                const pos = e.target.getLatLng();
+                updateLocation(pos.lat, pos.lng);
+            });
+        }
+
+        latInput.value = lat;
+        lngInput.value = lng;
+        map.setView([lat, lng], 16);
+
+        validateForm();
+    }
+
+    // Update location and get address
+    function updateLocation(lat, lng) {
+        latInput.value = lat;
+        lngInput.value = lng;
+
+        // Reverse geocoding with Nominatim
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ru`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.display_name) {
+                    addressInput.value = data.display_name;
+                }
+            })
+            .catch(err => console.error('Geocoding error:', err));
+
+        validateForm();
+    }
+
+    // Map click handler
+    map.on('click', function(e) {
+        setMarker(e.latlng.lat, e.latlng.lng);
+        updateLocation(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Geolocation button
+    locateBtn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            showGeoError('Геолокация не поддерживается вашим браузером');
+            return;
+        }
+
+        locateBtn.classList.add('loading');
+        locateBtn.textContent = 'Определение...';
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                setMarker(lat, lng);
+                updateLocation(lat, lng);
+
+                locateBtn.classList.remove('loading');
+                locateBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 2v4m0 12v4M2 12h4m12 0h4"></path>
+                    </svg>
+                    Мое местоположение
+                `;
+                hideGeoError();
+            },
+            function(error) {
+                locateBtn.classList.remove('loading');
+                locateBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 2v4m0 12v4M2 12h4m12 0h4"></path>
+                    </svg>
+                    Мое местоположение
+                `;
+
+                let message = 'Не удалось определить местоположение';
+                if (error.code === 1) {
+                    message = 'Доступ к геолокации запрещён. Пожалуйста, разрешите доступ в настройках браузера.';
+                } else if (error.code === 2) {
+                    message = 'Не удалось определить местоположение. Попробуйте указать адрес на карте вручную.';
+                }
+                showGeoError(message);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    });
+
+    // Show/hide geolocation error
+    function showGeoError(message) {
+        geoError.textContent = message;
+        geoError.style.display = 'block';
+    }
+
+    function hideGeoError() {
+        geoError.style.display = 'none';
+    }
+
+    // Saved addresses
+    document.querySelectorAll('.saved-address-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from others
+            document.querySelectorAll('.saved-address-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const lat = parseFloat(this.dataset.lat);
+            const lng = parseFloat(this.dataset.lng);
+            const address = this.dataset.address;
+
+            setMarker(lat, lng);
+            latInput.value = lat;
+            lngInput.value = lng;
+            addressInput.value = address;
+
+            validateForm();
+        });
+    });
+
+    // Save address checkbox toggle
+    saveAddressCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            addressNameGroup.classList.add('show');
+        } else {
+            addressNameGroup.classList.remove('show');
+        }
+    });
+
+    // Form validation
+    function validateForm() {
+        const hasLocation = latInput.value && lngInput.value;
+        const hasAddress = addressInput.value.trim().length > 0;
+        const hasPhone = document.getElementById('phone').value.trim().length > 0;
+
+        submitBtn.disabled = !(hasLocation && hasAddress && hasPhone);
+    }
+
+    // Validate on input changes
+    addressInput.addEventListener('input', validateForm);
+    document.getElementById('phone').addEventListener('input', validateForm);
+
+    // Initial validation
+    validateForm();
+
+    // Try to get location on load
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                setMarker(position.coords.latitude, position.coords.longitude);
+                updateLocation(position.coords.latitude, position.coords.longitude);
+            },
+            function(error) {
+                // Silent fail - user can click the button or map
+                console.log('Auto-geolocation failed:', error.message);
+            },
+            {timeout: 5000}
+        );
+    }
+});
+</script>
+{% endblock %}

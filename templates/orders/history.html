@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}История заказов{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-page {
+        padding: 24px 0;
+    }
+
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .order-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .order-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: var(--bg-light);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .order-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .order-number {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .order-date {
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .order-status {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-new { background: #e3f2fd; color: #1565c0; }
+    .status-confirmed { background: #e8f5e9; color: #2e7d32; }
+    .status-cooking { background: #fff3e0; color: #ef6c00; }
+    .status-delivering { background: #f3e5f5; color: #7b1fa2; }
+    .status-delivered { background: #e8f5e9; color: #2e7d32; }
+    .status-cancelled { background: #ffebee; color: #c62828; }
+
+    .order-card-body {
+        padding: 16px 20px;
+    }
+
+    .order-items-preview {
+        color: var(--text-light);
+        font-size: 0.95rem;
+        margin-bottom: 12px;
+    }
+
+    .order-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .order-total {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .order-actions .btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 16px;
+    }
+
+    .empty-state p {
+        color: var(--text-light);
+        margin-bottom: 24px;
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 24px;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 8px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        text-decoration: none;
+        color: var(--text-color);
+    }
+
+    .pagination a:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .pagination .current {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .order-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .order-info {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .order-card-footer {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .order-actions {
+            width: 100%;
+        }
+
+        .order-actions .btn {
+            flex: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="history-page">
+        <h1 class="page-title">История заказов</h1>
+
+        {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="order-card-header">
+                    <div class="order-info">
+                        <span class="order-number">Заказ #{{ order.pk }}</span>
+                        <span class="order-date">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    <span class="order-status status-{{ order.status }}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+
+                <div class="order-card-body">
+                    <p class="order-items-preview">
+                        {% for item in order.items.all %}
+                        {{ item.product_name }} x{{ item.quantity }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                </div>
+
+                <div class="order-card-footer">
+                    <span class="order-total">{{ order.total|floatformat:0 }} сум</span>
+                    <div class="order-actions">
+                        <a href="{% url 'orders:detail' pk=order.pk %}" class="btn btn-outline">Подробнее</a>
+                        <form action="{% url 'orders:repeat' pk=order.pk %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">Повторить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="current">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Далее</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>У вас пока нет заказов</p>
+            <a href="{% url 'menu:catalog' %}" class="btn btn-primary">Перейти в меню</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
