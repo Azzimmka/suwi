@@ -1,0 +1,14 @@
+# Django
+Django>=4.2,<5.0
+
+# Image processing
+Pillow>=10.0.0
+
+# Telegram Bot API
+python-telegram-bot>=20.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Environment variables (optional, for production)
+python-dotenv>=1.0.0
