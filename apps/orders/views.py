@@ -24,7 +24,7 @@ class CheckoutView(LoginRequiredMixin, View):
         cart = Cart(request)
 
         # Redirect if cart is empty
-        if cart.is_empty():
+        if cart.is_empty:
             messages.warning(request, 'Ваша корзина пуста')
             return redirect('cart:detail')
 
@@ -46,7 +46,7 @@ class CheckoutView(LoginRequiredMixin, View):
         cart = Cart(request)
 
         # Redirect if cart is empty
-        if cart.is_empty():
+        if cart.is_empty:
             messages.warning(request, 'Ваша корзина пуста')
             return redirect('cart:detail')
 
