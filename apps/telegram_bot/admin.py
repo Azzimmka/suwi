@@ -13,7 +13,7 @@ from .services import TelegramBot
 class TelegramSettingsAdmin(admin.ModelAdmin):
     """Admin for TelegramSettings model (singleton)."""
 
-    list_display = ('__str__', 'is_active', 'notify_customer', 'updated_at', 'test_connection')
+    list_display = ('__str__', 'is_active', 'notify_customer', 'updated_at')
     readonly_fields = ('updated_at', 'test_connection')
 
     fieldsets = (
@@ -36,6 +36,22 @@ class TelegramSettingsAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         # Prevent deletion of singleton
         return False
+
+    def changelist_view(self, request, extra_context=None):
+        """Redirect to the singleton object or add form."""
+        from django.shortcuts import redirect
+        from django.urls import reverse
+
+        # Try to get existing settings
+        try:
+            obj = TelegramSettings.objects.get(pk=1)
+            return redirect(
+                reverse('admin:telegram_bot_telegramsettings_change', args=[obj.pk])
+            )
+        except TelegramSettings.DoesNotExist:
+            return redirect(
+                reverse('admin:telegram_bot_telegramsettings_add')
+            )
 
     def test_connection(self, obj):
         """Test Telegram bot connection."""
