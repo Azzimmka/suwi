@@ -31,9 +31,7 @@
                     <a href="{% url 'menu:catalog' %}" class="nav-link">Меню</a>
                     <a href="{% url 'cart:detail' %}" class="nav-link cart-link">
                         Корзина
-                        {% if cart|length > 0 %}
-                        <span class="cart-count">{{ cart|length }}</span>
-                        {% endif %}
+                        <span class="cart-count" {% if not cart|length %}style="display: none;"{% endif %}>{{ cart|length }}</span>
                     </a>
 
                     {% if user.is_authenticated %}
